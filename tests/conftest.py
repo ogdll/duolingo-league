@@ -5,9 +5,9 @@ from app.models import Base
 from app.main import app
 from app.database import get_db
 
-TEST_DB_URL = "postgresql+asyncpg://user:password@localhost:5432/duolingo_leagues_test"
+TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
-_engine = create_async_engine(TEST_DB_URL)
+_engine = create_async_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
 _AsyncTestSession = async_sessionmaker(_engine, expire_on_commit=False)
 
 @pytest_asyncio.fixture(scope="session")
