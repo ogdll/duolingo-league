@@ -1,4 +1,5 @@
-from datetime import datetime
+from __future__ import annotations
+from datetime import date, datetime
 from typing import Optional
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, JSON, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -26,7 +27,7 @@ class StatsSnapshot(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
     xp_total: Mapped[int] = mapped_column(Integer, nullable=False)
     xp_gained_today: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

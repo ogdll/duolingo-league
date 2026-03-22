@@ -1,6 +1,5 @@
 import pytest
 from datetime import date
-from sqlalchemy import select
 from app.models import User, StatsSnapshot
 
 @pytest.mark.asyncio
