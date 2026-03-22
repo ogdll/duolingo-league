@@ -34,6 +34,7 @@ async def test_fetch_returns_stats():
     assert stats["xp_total"] == 350  # sum of all xpSums across courses
     assert "es" in stats["languages"]
     assert "fr" in stats["languages"]
+    assert "league" in stats  # league key present (may be None if scraping skipped)
 
 @pytest.mark.asyncio
 async def test_raises_when_user_not_found():
@@ -71,3 +72,17 @@ async def test_league_scraping_fallback():
         stats = await fetch_user_stats("testuser")
 
     assert stats["league"] == "Gold"
+
+@pytest.mark.asyncio
+async def test_raises_when_duolingo_unavailable():
+    import httpx as httpx_lib
+    with patch("app.duolingo.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(side_effect=httpx_lib.ConnectError("connection refused"))
+        mock_client_cls.return_value = mock_client
+
+        from app.duolingo import DuolingoUnavailable
+        with pytest.raises(DuolingoUnavailable):
+            await fetch_user_stats("anyone")

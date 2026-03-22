@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import httpx
+import logging
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
 
 API_URL = "https://www.duolingo.com/2017-06-30/users"
 PROFILE_URL = "https://www.duolingo.com/profile/{username}"
@@ -66,5 +69,6 @@ async def _scrape_league(client: httpx.AsyncClient, username: str) -> str | None
         if tag:
             return tag.get_text(strip=True).replace(" League", "").replace(" league", "")
         return None
-    except Exception:
+    except Exception as e:
+        logger.debug("League scraping failed for %s: %s", username, e)
         return None
