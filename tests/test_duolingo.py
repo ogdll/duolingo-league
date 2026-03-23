@@ -7,9 +7,10 @@ MOCK_API_RESPONSE = {
         "username": "testuser",
         "name": "Test User",
         "streak": 42,
+        "totalXp": 350,
         "courses": [
-            {"learningLanguage": "es", "xpSums": [100, 200]},
-            {"learningLanguage": "fr", "xpSums": [50]},
+            {"learningLanguage": "es", "xp": 300},
+            {"learningLanguage": "fr", "xp": 50},
         ],
         "currentCourse": {"learningLanguage": "es"}
     }]

@@ -37,6 +37,12 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create tables if they don't exist (for SQLite dev mode)
+    from app.database import engine
+    from app.models import Base
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     scheduler.add_job(_run_daily_update, "cron", hour=SCHEDULER_HOUR, timezone="UTC")
     scheduler.start()
     yield

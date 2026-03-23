@@ -28,7 +28,7 @@ async def fetch_user_stats(username: str) -> dict:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
                 API_URL,
-                params={"fields": "username,name,streak,courses,currentCourse", "username": username},
+                params={"username": username},
                 headers={"User-Agent": "Mozilla/5.0"},
             )
             resp.raise_for_status()
@@ -40,7 +40,7 @@ async def fetch_user_stats(username: str) -> dict:
 
             user = users[0]
             courses = user.get("courses", [])
-            xp_total = sum(sum(c.get("xpSums", [])) for c in courses)
+            xp_total = user.get("totalXp") or sum(c.get("xp", 0) for c in courses)
             languages = [c["learningLanguage"] for c in courses if "learningLanguage" in c]
             streak = user.get("streak", 0)
 
