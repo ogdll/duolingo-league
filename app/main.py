@@ -106,6 +106,8 @@ async def join_submit(
     real_name: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    duolingo_username = duolingo_username.strip().lstrip("@")
+
     def error(msg: str):
         return templates.TemplateResponse(request, "join.html", {"error": msg})
 
