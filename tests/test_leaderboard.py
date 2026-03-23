@@ -92,3 +92,22 @@ async def test_null_xp_today_treated_as_zero(db):
     # other tests sharing the same session-scoped in-memory SQLite DB.
     rows = [r for r in rows if r["duolingo_username"].startswith("lb_null_")]
     assert rows[0]["duolingo_username"] == "lb_null_u2"
+
+@pytest.mark.asyncio
+async def test_month_leaderboard(db):
+    from unittest.mock import patch
+    # Use a stable fake date (15th of month) to avoid month-start edge cases
+    fake_today = date(2026, 3, 15)
+    month_start = fake_today.replace(day=1)
+
+    u = await _make_user(db, "lb_month_u1", "Month One")
+    await _make_snap(db, u.id, month_start, xp_total=2000)
+    await _make_snap(db, u.id, fake_today, xp_total=2800)
+
+    with patch("app.leaderboard.date") as mock_date:
+        mock_date.today.return_value = fake_today
+        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
+        rows = await get_leaderboard(db, period="month")
+
+    lb_rows = [r for r in rows if r["duolingo_username"].startswith("lb_month_")]
+    assert lb_rows[0]["xp"] == 800  # 2800 - 2000

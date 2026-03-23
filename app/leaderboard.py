@@ -21,7 +21,7 @@ async def get_leaderboard(db: AsyncSession, period: str) -> list[dict]:
         start = today.replace(day=1)
         return await _period_leaderboard(db, start, today)
     elif period == "alltime":
-        return await _alltime_leaderboard(db, today)
+        return await _alltime_leaderboard(db)
     else:
         raise ValueError(f"Unknown period: {period}")
 
@@ -52,7 +52,7 @@ async def _day_leaderboard(db: AsyncSession, today: date) -> list[dict]:
         for r in rows
     ]
 
-async def _alltime_leaderboard(db: AsyncSession, today: date) -> list[dict]:
+async def _alltime_leaderboard(db: AsyncSession) -> list[dict]:
     # Latest snapshot per user
     latest = (
         select(
@@ -96,7 +96,7 @@ async def _period_leaderboard(db: AsyncSession, start: date, end: date) -> list[
             StatsSnapshot.user_id,
             func.min(StatsSnapshot.date).label("first_date"),
         )
-        .where(StatsSnapshot.date >= start)
+        .where(StatsSnapshot.date >= start, StatsSnapshot.date <= end)
         .group_by(StatsSnapshot.user_id)
         .subquery()
     )
@@ -105,7 +105,7 @@ async def _period_leaderboard(db: AsyncSession, start: date, end: date) -> list[
             StatsSnapshot.user_id,
             func.max(StatsSnapshot.date).label("last_date"),
         )
-        .where(StatsSnapshot.date <= end)
+        .where(StatsSnapshot.date >= start, StatsSnapshot.date <= end)
         .group_by(StatsSnapshot.user_id)
         .subquery()
     )
