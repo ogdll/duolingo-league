@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import date
+from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
@@ -23,6 +23,8 @@ from app.models import StatsSnapshot, User
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+BASE_DIR = Path(__file__).parent.parent
+
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 SCHEDULER_HOUR = int(os.getenv("SCHEDULER_HOUR", "2"))
 
@@ -38,8 +40,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
 async def _run_daily_update() -> None:
@@ -71,8 +73,8 @@ async def _run_daily_update() -> None:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, period: str = "day", db: AsyncSession = Depends(get_db)):
     rows = await get_leaderboard(db, period=period)
-    return templates.TemplateResponse("index.html", {
-        "request": request, "rows": rows, "period": period
+    return templates.TemplateResponse(request, "index.html", {
+        "rows": rows, "period": period
     })
 
 
@@ -84,7 +86,7 @@ async def api_leaderboard(period: str = "day", db: AsyncSession = Depends(get_db
 
 @app.get("/join", response_class=HTMLResponse)
 async def join_form(request: Request):
-    return templates.TemplateResponse("join.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "join.html", {"error": None})
 
 
 @app.post("/join", response_class=HTMLResponse)
@@ -95,7 +97,7 @@ async def join_submit(
     db: AsyncSession = Depends(get_db),
 ):
     def error(msg: str):
-        return templates.TemplateResponse("join.html", {"request": request, "error": msg})
+        return templates.TemplateResponse(request, "join.html", {"error": msg})
 
     try:
         stats = await fetch_user_stats(duolingo_username)
@@ -126,7 +128,7 @@ async def join_submit(
 
 @app.get("/leave", response_class=HTMLResponse)
 async def leave_form(request: Request):
-    return templates.TemplateResponse("leave.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "leave.html", {"error": None})
 
 
 @app.post("/leave", response_class=HTMLResponse)
@@ -143,8 +145,7 @@ async def leave_submit(
     )
     user = (await db.execute(stmt)).scalar_one_or_none()
     if not user:
-        return templates.TemplateResponse("leave.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "leave.html", {
             "error": "No active member found with that username and name"
         })
     user.is_active = False
@@ -153,7 +154,7 @@ async def leave_submit(
 
 
 @app.post("/admin/refresh")
-async def admin_refresh(token: str = "", db: AsyncSession = Depends(get_db)):
+async def admin_refresh(token: str = ""):
     if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
     await _run_daily_update()

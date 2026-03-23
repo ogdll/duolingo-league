@@ -26,7 +26,7 @@ async def test_join_registers_user(client, db):
             "duolingo_username": "newuser123",
             "real_name": "New User"
         })
-    assert resp.status_code in (200, 303)
+    assert resp.status_code == 303
 
 @pytest.mark.asyncio
 async def test_join_duplicate_shows_error(client, db):
@@ -53,7 +53,7 @@ async def test_leave_removes_user(client, db):
         "duolingo_username": "leaving_user",
         "real_name": "Leaving User"
     })
-    assert resp.status_code in (200, 303)
+    assert resp.status_code == 303
     await db.refresh(user)
     assert user.is_active is False
 
