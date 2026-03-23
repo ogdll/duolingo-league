@@ -118,14 +118,24 @@ async def join_submit(
     except DuolingoUnavailable:
         return error("Couldn't reach Duolingo right now — try again in a few minutes")
 
-    user = User(duolingo_username=duolingo_username, real_name=real_name)
-    db.add(user)
-    try:
+    # Check if user already exists (may have left previously)
+    existing = (await db.execute(
+        select(User).where(User.duolingo_username == duolingo_username)
+    )).scalar_one_or_none()
+
+    if existing:
+        if existing.is_active:
+            return error("This username is already in the league")
+        # Reactivate
+        existing.is_active = True
+        existing.real_name = real_name
+        await db.commit()
+        user = existing
+    else:
+        user = User(duolingo_username=duolingo_username, real_name=real_name)
+        db.add(user)
         await db.commit()
         await db.refresh(user)
-    except IntegrityError:
-        await db.rollback()
-        return error("This username is already in the league")
 
     await save_snapshot(
         db, user,
