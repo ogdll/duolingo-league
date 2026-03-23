@@ -64,7 +64,27 @@ async def test_admin_refresh_requires_token(client):
 
 @pytest.mark.asyncio
 async def test_admin_refresh_with_valid_token(client):
-    with patch("app.main.ADMIN_TOKEN", "test-token"), \
-         patch("app.main._run_daily_update", new_callable=AsyncMock):
-        resp = await client.post("/admin/refresh", params={"token": "test-token"})
+    import app.main as main_mod
+    orig = main_mod._last_refresh_at
+    main_mod._last_refresh_at = float('-inf')
+    try:
+        with patch("app.main.ADMIN_TOKEN", "test-token"), \
+             patch("app.main._run_daily_update", new_callable=AsyncMock):
+            resp = await client.post("/admin/refresh", params={"token": "test-token"})
+    finally:
+        main_mod._last_refresh_at = orig
     assert resp.status_code == 200
+
+@pytest.mark.asyncio
+async def test_admin_refresh_rate_limited(client):
+    import time
+    import app.main as main_mod
+    orig = main_mod._last_refresh_at
+    main_mod._last_refresh_at = time.monotonic()  # just refreshed
+    try:
+        with patch("app.main.ADMIN_TOKEN", "test-token"), \
+             patch("app.main._run_daily_update", new_callable=AsyncMock):
+            resp = await client.post("/admin/refresh", params={"token": "test-token"})
+    finally:
+        main_mod._last_refresh_at = orig
+    assert resp.status_code == 429

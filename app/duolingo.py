@@ -106,13 +106,13 @@ async def save_snapshot(
     existing = (await db.execute(stmt)).scalar_one_or_none()
 
     if existing:
-        from datetime import datetime
+        from datetime import datetime, timezone
         existing.xp_total = xp_total
         existing.xp_gained_today = xp_gained_today
         existing.streak = streak
         existing.league = league
         existing.languages = languages
-        existing.captured_at = datetime.utcnow()
+        existing.captured_at = datetime.now(timezone.utc)
     else:
         snapshot = StatsSnapshot(
             user_id=user.id,

@@ -28,6 +28,10 @@ BASE_DIR = Path(__file__).parent.parent
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 SCHEDULER_HOUR = int(os.getenv("SCHEDULER_HOUR", "2"))
 
+import time
+_last_refresh_at: float = float('-inf')
+_REFRESH_COOLDOWN_SECONDS = 60
+
 scheduler = AsyncIOScheduler()
 
 
@@ -155,7 +159,12 @@ async def leave_submit(
 
 @app.post("/admin/refresh")
 async def admin_refresh(token: str = ""):
+    global _last_refresh_at
     if not ADMIN_TOKEN or token != ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
+    now = time.monotonic()
+    if now - _last_refresh_at < _REFRESH_COOLDOWN_SECONDS:
+        raise HTTPException(status_code=429, detail="Rate limit: wait 60 seconds between refreshes")
+    _last_refresh_at = now
     await _run_daily_update()
     return {"status": "ok"}
