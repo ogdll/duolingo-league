@@ -87,7 +87,10 @@ async def save_snapshot(
     league: str | None,
     languages: list[str],
 ) -> None:
-    """Insert or update today's snapshot for the user. XP gained is clamped to 0 if negative."""
+    """Insert or update today's snapshot for the user. XP gained is clamped to 0 if negative.
+
+    Note: commits the session internally. Do not call within a larger transaction.
+    """
     if prev_xp_total is None:
         xp_gained_today = None
     else:
@@ -103,11 +106,13 @@ async def save_snapshot(
     existing = (await db.execute(stmt)).scalar_one_or_none()
 
     if existing:
+        from datetime import datetime
         existing.xp_total = xp_total
         existing.xp_gained_today = xp_gained_today
         existing.streak = streak
         existing.league = league
         existing.languages = languages
+        existing.captured_at = datetime.utcnow()
     else:
         snapshot = StatsSnapshot(
             user_id=user.id,
