@@ -1,1 +1,18 @@
-{% extends "base.html" %}{% block content %}<div>{% if error %}<span class="error">{{ error }}</span>{% endif %}<form method="post"><input name="duolingo_username"><input name="real_name"><button>Leave</button></form></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h1>Leave the League</h1>
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+<form method="post" action="/leave">
+  <label>
+    Duolingo username
+    <input type="text" name="duolingo_username" required autofocus>
+  </label>
+  <label>
+    Your real name (for verification)
+    <input type="text" name="real_name" required>
+  </label>
+  <button type="submit" class="danger">Leave</button>
+</form>
+{% endblock %}
